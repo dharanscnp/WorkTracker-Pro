@@ -100,7 +100,13 @@ WT.State = {
 
     lastAction: "",
 
-    processing: false
+    processing: false,
+
+    lastClickTime: 0,
+
+    clickDelay: 500
+    
+    ignoreMouseUntil: 0
 
 };
 /* ===========================================================
@@ -518,45 +524,86 @@ WT.Detector = {
 
     init() {
 
-    // Detect field modifications
-    document.addEventListener("input", function (e) {
+        // Detect field modifications
+        document.addEventListener("input", function (e) {
 
-        const tag = e.target.tagName;
+            const tag = e.target.tagName;
 
-        if (tag === "INPUT" || tag === "TEXTAREA") {
+            if (tag === "INPUT" || tag === "TEXTAREA") {
 
-            WT.State.modified = true;
+                WT.State.modified = true;
 
-        }
+            }
 
-    }, true);
+        }, true);
 
-   // Detect button clicks
-document.addEventListener("click", function (e) {
+        // Mouse detection
+        document.addEventListener("click", function (e) {
 
-    const btn = e.target.closest("button");
+            const btn = e.target.closest("button");
 
-    if (!btn) return;
+            if (!btn) return;
 
-    const text = btn.textContent.trim().toLowerCase();
+            const text = btn.textContent.trim().toLowerCase();
 
-    console.log("[Detector]", text);
+            console.log("[Detector]", text);
 
-    switch(text){
+            switch(text){
 
-        case "accept":
+                case "accept":
+                    WT.Tracker.record("accept");
+                    break;
+
+                case "reject":
+                    WT.Tracker.record("reject");
+                    break;
+
+                case "complete":
+                case "complete & logout":
+                case "continue":
+                case "refresh":
+                    console.log("[Detector] Ignored:", text);
+                    break;
+
+            }
+
+        }, true);
+
+        // Keyboard detection
+        document.addEventListener("keydown", function(e){
+
+            if (e.key !== "Enter") return;
+
+            if (e.ctrlKey && e.shiftKey){
+
+                console.log("[Keyboard] Reject Remaining");
+                WT.Tracker.record("reject");
+                return;
+
+            }
+
+            if (e.ctrlKey){
+
+                console.log("[Keyboard] Reject");
+                WT.Tracker.record("reject");
+                return;
+
+            }
+
+            if (e.altKey){
+
+                console.log("[Keyboard] Accept Remaining");
+                WT.Tracker.record("accept");
+                return;
+
+            }
+
+            console.log("[Keyboard] Accept");
             WT.Tracker.record("accept");
-            break;
 
-        case "reject":
-            WT.Tracker.record("reject");
-            break;
+        }, true);
 
     }
-
-}, true);
-
-}
 
 };
 /* ===========================================================
