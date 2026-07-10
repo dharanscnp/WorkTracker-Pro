@@ -91,6 +91,19 @@ WT.DefaultData = {
 WT.DB = {};
 
 /* ===========================================================
+   Runtime State
+=========================================================== */
+
+WT.State = {
+
+    modified: false,
+
+    lastAction: "",
+
+    processing: false
+
+};
+/* ===========================================================
    Storage
 =========================================================== */
 
@@ -354,11 +367,33 @@ Version ${WT.Config.Version}
 
 <hr>
 
+<div style="display:flex;gap:5px;flex-wrap:wrap;">
+
+<button id="btnAccept">
+
++ Accept
+
+</button>
+
+<button id="btnUpdate">
+
++ Update
+
+</button>
+
+<button id="btnReject">
+
++ Reject
+
+</button>
+
 <button id="wtReset">
 
 Reset
 
 </button>
+
+</div>
 
 `;
 
@@ -383,6 +418,23 @@ Reset
             }
 
         };
+        document.getElementById("btnAccept").onclick=function(){
+
+    WT.Tracker.record("accept");
+
+};
+
+document.getElementById("btnUpdate").onclick=function(){
+
+    WT.Tracker.record("update");
+
+};
+
+document.getElementById("btnReject").onclick=function(){
+
+    WT.Tracker.record("reject");
+
+};
 
         WT.Widget.refresh();
 
@@ -406,9 +458,7 @@ Reset
         WT.DB.counters.reject;
 
         document.getElementById("wtTotal").textContent =
-        WT.DB.counters.accept +
-        WT.DB.counters.update +
-        WT.DB.counters.reject;
+WT.DB.counters.total;
 
         document.getElementById("wtTimer").textContent =
         WT.Session.getElapsed();
@@ -467,43 +517,71 @@ Reset
 
 };
 /* ===========================================================
+   Detector Engine
+=========================================================== */
+
+WT.Detector = {
+
+    init() {
+
+        document.addEventListener("input", function (e) {
+
+            const tag = e.target.tagName;
+
+            if (
+                tag === "INPUT" ||
+                tag === "TEXTAREA"
+            ) {
+
+                WT.State.modified = true;
+
+            }
+
+        }, true);
+
+    }
+
+};
+/* ===========================================================
    Tracker Engine
 =========================================================== */
 
 WT.Tracker = {
 
-    record(type){
+   record(type){
 
-        if(!WT.DB.counters.hasOwnProperty(type))
-            return;
+    // If user modified any field before clicking Accept,
+    // count it as Update instead of Accept
+    if(type === "accept" && WT.State.modified){
 
-        WT.DB.counters[type]++;
+        type = "update";
 
-        WT.DB.counters.total =
-            WT.DB.counters.accept +
-            WT.DB.counters.update +
-            WT.DB.counters.reject;
+    }
 
-        WT.DB.debug.lastAction = type;
+    if(!WT.DB.counters.hasOwnProperty(type))
+        return;
 
-        WT.Storage.save();
+    WT.DB.counters[type]++;
 
-        WT.Widget.refresh();
+    WT.DB.counters.total =
+        WT.DB.counters.accept +
+        WT.DB.counters.update +
+        WT.DB.counters.reject;
 
-    },
+    WT.DB.debug.lastAction = type;
+
+    // Reset modification flag for next record
+    WT.State.modified = false;
+
+    WT.Storage.save();
+
+    WT.Widget.refresh();
+
+},
 
     reset(){
 
-        WT.DB.counters.accept = 0;
-        WT.DB.counters.update = 0;
-        WT.DB.counters.reject = 0;
-        WT.DB.counters.total = 0;
-
-        WT.DB.debug.lastAction = "reset";
-
-        WT.Storage.save();
-
-        WT.Widget.refresh();
+        WT.Tracker.reset();
 
     },
 
@@ -522,11 +600,13 @@ WT.start=function(){
 
     WT.Storage.load();
 
-    WT.User.init();
+WT.User.init();
 
-    WT.Session.start();
+WT.Session.start();
 
-    WT.Widget.create();
+WT.Detector.init();
+
+WT.Widget.create();
 
     setInterval(function(){
 
@@ -565,5 +645,6 @@ WT.start=function(){
 };
 
 WT.start();
+
 
 })();
