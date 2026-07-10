@@ -405,19 +405,13 @@ Reset
 
         document.getElementById("wtReset").onclick = function(){
 
-            if(confirm("Reset today's counters?")){
+    if(confirm("Reset today's counters?")){
 
-                WT.DB.counters.accept = 0;
-                WT.DB.counters.update = 0;
-                WT.DB.counters.reject = 0;
+        WT.Tracker.reset();
 
-                WT.Storage.save();
+    }
 
-                WT.Widget.refresh();
-
-            }
-
-        };
+};
         document.getElementById("btnAccept").onclick=function(){
 
     WT.Tracker.record("accept");
@@ -581,9 +575,22 @@ WT.Tracker = {
 
     reset(){
 
-        WT.Tracker.reset();
+    WT.DB.counters.accept = 0;
+    WT.DB.counters.update = 0;
+    WT.DB.counters.reject = 0;
+    WT.DB.counters.total = 0;
 
-    },
+    WT.State.modified = false;
+    WT.State.lastAction = "";
+    WT.State.processing = false;
+
+    WT.DB.debug.lastAction = "reset";
+
+    WT.Storage.save();
+
+    WT.Widget.refresh();
+
+},
 
     getTotal(){
 
@@ -613,24 +620,6 @@ WT.Widget.create();
         WT.Widget.refresh();
 
     },1000);
-
-    console.log(
-
-        WT.Config.AppName,
-
-        WT.Config.Version,
-
-        WT.DB.user.name
-
-    );
-
-};
-
-    WT.Storage.load();
-
-    WT.User.init();
-
-    WT.Session.start();
 
     console.log(
 
