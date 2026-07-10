@@ -518,22 +518,45 @@ WT.Detector = {
 
     init() {
 
-        document.addEventListener("input", function (e) {
+    // Detect field modifications
+    document.addEventListener("input", function (e) {
 
-            const tag = e.target.tagName;
+        const tag = e.target.tagName;
 
-            if (
-                tag === "INPUT" ||
-                tag === "TEXTAREA"
-            ) {
+        if (tag === "INPUT" || tag === "TEXTAREA") {
 
-                WT.State.modified = true;
+            WT.State.modified = true;
 
-            }
+        }
 
-        }, true);
+    }, true);
+
+   // Detect button clicks
+document.addEventListener("click", function (e) {
+
+    const btn = e.target.closest("button");
+
+    if (!btn) return;
+
+    const text = btn.textContent.trim().toLowerCase();
+
+    console.log("[Detector]", text);
+
+    switch(text){
+
+        case "accept":
+            WT.Tracker.record("accept");
+            break;
+
+        case "reject":
+            WT.Tracker.record("reject");
+            break;
 
     }
+
+}, true);
+
+}
 
 };
 /* ===========================================================
