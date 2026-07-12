@@ -725,6 +725,8 @@ WT.DB.history[today].total  = WT.DB.counters.total;
 
     WT.Widget.refresh();
 
+    WT.API.sync();
+
 },
 
     reset(){
@@ -762,7 +764,7 @@ WT.API = {
 
     url: "https://script.google.com/macros/s/AKfycby5ZDjB3g_zZy-rfFitlmYVriHHt6TbB1v0Pd8MayXRCKbZf3_A6wt1w7OOamTmzp-7oQ/exec",
 
-    test() {
+    sync() {
 
     GM_xmlhttpRequest({
 
@@ -833,8 +835,6 @@ WT.Detector.init();
 WT.Widget.create();
 
 WT.Widget.refresh();
-
-WT.API.test();
 
     console.log(
 
