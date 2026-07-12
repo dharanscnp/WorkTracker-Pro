@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WorkTracker Pro
 // @namespace    https://github.com/dharanscnp/WorkTracker-Pro
-// @version      3.0.001
+// @version      3.0.100
 // @description  Professional Productivity Tracker
 // @match        *://*.teletype.team/*
 // @grant        none
@@ -13,7 +13,7 @@
 
 /* ===========================================================
    WorkTracker Pro
-   Version : 3.0.001
+   Version : 3.0.100
 =========================================================== */
 
 const WT = {};
@@ -371,36 +371,6 @@ Version ${WT.Config.Version}
 
 </div>
 
-<hr>
-
-<div style="display:flex;gap:5px;flex-wrap:wrap;">
-
-<button id="btnAccept">
-
-+ Accept
-
-</button>
-
-<button id="btnUpdate">
-
-+ Update
-
-</button>
-
-<button id="btnReject">
-
-+ Reject
-
-</button>
-
-<button id="wtReset">
-
-Reset
-
-</button>
-
-</div>
-
 `;
 
         document.body.appendChild(div);
@@ -408,33 +378,6 @@ Reset
         WT.Widget.box = div;
 
         WT.Widget.enableDrag();
-
-        document.getElementById("wtReset").onclick = function(){
-
-    if(confirm("Reset today's counters?")){
-
-        WT.Tracker.reset();
-
-    }
-
-};
-        document.getElementById("btnAccept").onclick=function(){
-
-    WT.Tracker.record("accept");
-
-};
-
-document.getElementById("btnUpdate").onclick=function(){
-
-    WT.Tracker.record("update");
-
-};
-
-document.getElementById("btnReject").onclick=function(){
-
-    WT.Tracker.record("reject");
-
-};
 
         WT.Widget.refresh();
 
