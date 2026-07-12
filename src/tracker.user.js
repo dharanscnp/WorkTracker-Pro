@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WorkTracker Pro
 // @namespace    https://github.com/dharanscnp/WorkTracker-Pro
-// @version      3.0.100
+// @version      3.1.100
 // @description  Professional Productivity Tracker
 // @match        *://*.teletype.team/*
 // @grant        GM_xmlhttpRequest
@@ -15,7 +15,7 @@
 
 /* ===========================================================
    WorkTracker Pro
-   Version : 3.0.100
+   Version : 3.1.100
 =========================================================== */
 
 const WT = {};
@@ -28,7 +28,7 @@ WT.Config = {
 
     AppName: "WorkTracker Pro",
 
-    Version: "3.0.100",
+    Version: "3.1.100",
 
     Debug: true,
 
