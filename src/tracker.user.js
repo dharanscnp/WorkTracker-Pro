@@ -4,7 +4,9 @@
 // @version      3.0.100
 // @description  Professional Productivity Tracker
 // @match        *://*.teletype.team/*
-// @grant        none
+// @grant        GM_xmlhttpRequest
+// @connect      script.google.com
+// @connect      script.googleusercontent.com
 // ==/UserScript==
 
 (function () {
@@ -48,7 +50,7 @@ WT.DefaultData = {
 
     },
 
-    counters:{
+counters:{
 
     accept:0,
 
@@ -60,7 +62,11 @@ WT.DefaultData = {
 
 },
 
-    widget:{
+history:{},
+
+lastDate:"",
+
+widget:{
 
         top:"100px",
 
@@ -126,16 +132,25 @@ WT.Storage = {
 
             if(data){
 
-                WT.DB=JSON.parse(data);
+    WT.DB = JSON.parse(data);
 
-            }else{
+    // Upgrade older databases
+    if(!WT.DB.history){
+        WT.DB.history = {};
+    }
 
-                WT.DB=
-                structuredClone(
-                    WT.DefaultData
-                );
+    if(!WT.DB.lastDate){
+        WT.DB.lastDate = "";
+    }
 
-            }
+}else{
+
+    WT.DB =
+    structuredClone(
+        WT.DefaultData
+    );
+
+}
 
         }
         catch(e){
@@ -583,6 +598,88 @@ switch (action) {
     }
 
 };
+
+/* ===========================================================
+   History
+=========================================================== */
+
+WT.History = {
+
+    today() {
+
+        return new Date().toISOString().split("T")[0];
+
+    },
+
+    init() {
+
+        const today = WT.History.today();
+
+        if (!WT.DB.history[today]) {
+
+            WT.DB.history[today] = {
+
+                user: WT.DB.user.name,
+
+                accept: 0,
+
+                update: 0,
+
+                reject: 0,
+
+                total: 0
+
+            };
+
+            WT.DB.lastDate = today;
+
+            WT.Storage.save();
+
+            console.log("[History] Created:", today);
+
+        }
+
+    },
+
+    checkDate() {
+
+        const today = WT.History.today();
+
+        // If it's still the same day, do nothing.
+        if (WT.DB.lastDate === today)
+            return;
+
+        console.log("[History] New Day:", today);
+
+        // Reset today's counters
+        WT.DB.counters.accept = 0;
+        WT.DB.counters.update = 0;
+        WT.DB.counters.reject = 0;
+        WT.DB.counters.total = 0;
+
+        // Create today's history record
+        WT.DB.history[today] = {
+
+            user: WT.DB.user.name,
+
+            accept: 0,
+
+            update: 0,
+
+            reject: 0,
+
+            total: 0
+
+        };
+
+        WT.DB.lastDate = today;
+
+        WT.Storage.save();
+
+    }
+
+};
+
 /* ===========================================================
    Tracker Engine
 =========================================================== */
@@ -591,8 +688,11 @@ WT.Tracker = {
 
    record(type){
 
+    WT.History.checkDate();
+
     // If user modified any field before clicking Accept,
     // count it as Update instead of Accept
+
     if(type === "accept" && WT.State.modified){
 
         type = "update";
@@ -608,6 +708,13 @@ WT.Tracker = {
         WT.DB.counters.accept +
         WT.DB.counters.update +
         WT.DB.counters.reject;
+        
+const today = WT.History.today();
+
+WT.DB.history[today].accept = WT.DB.counters.accept;
+WT.DB.history[today].update = WT.DB.counters.update;
+WT.DB.history[today].reject = WT.DB.counters.reject;
+WT.DB.history[today].total  = WT.DB.counters.total;
 
     WT.DB.debug.lastAction = type;
 
@@ -646,6 +753,67 @@ WT.Tracker = {
     }
 
 };
+
+/* ===========================================================
+   API
+=========================================================== */
+
+WT.API = {
+
+    url: "https://script.google.com/macros/s/AKfycby5ZDjB3g_zZy-rfFitlmYVriHHt6TbB1v0Pd8MayXRCKbZf3_A6wt1w7OOamTmzp-7oQ/exec",
+
+    test() {
+
+    GM_xmlhttpRequest({
+
+        method: "POST",
+
+        url: this.url,
+
+        headers: {
+
+            "Content-Type": "application/json"
+
+        },
+
+        data: JSON.stringify({
+
+            date: WT.History.today(),
+
+            user: WT.DB.user.name,
+
+            accept: WT.DB.counters.accept,
+
+            update: WT.DB.counters.update,
+
+            reject: WT.DB.counters.reject,
+
+            total: WT.DB.counters.total,
+
+            version: WT.Config.Version,
+
+            computer: navigator.platform
+
+        }),
+
+        onload: function(response){
+
+            console.log("[API]", response.responseText);
+
+        },
+
+       onerror: function(error){
+
+    console.error("[API ERROR]", error.status);
+    console.error(error);
+
+}
+
+    });
+
+}
+
+};
 /* ===========================================================
    Bootstrap
 =========================================================== */
@@ -656,6 +824,8 @@ WT.start=function(){
 
 WT.User.init();
 
+WT.History.init();
+
 WT.Session.start();
 
 WT.Detector.init();
@@ -663,6 +833,8 @@ WT.Detector.init();
 WT.Widget.create();
 
 WT.Widget.refresh();
+
+WT.API.test();
 
     console.log(
 
@@ -676,7 +848,8 @@ WT.Widget.refresh();
 
 };
 
-WT.start();
+window.WT = WT;
 
+WT.start();
 
 })();
