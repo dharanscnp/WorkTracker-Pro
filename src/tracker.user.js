@@ -26,7 +26,7 @@ WT.Config = {
 
     AppName: "WorkTracker Pro",
 
-    Version: "3.0.001",
+    Version: "3.0.100",
 
     Debug: true,
 
@@ -335,15 +335,19 @@ Version ${WT.Config.Version}
 👤 <span id="wtUser"></span>
 </div>
 
-<div>
-🟢 Ready
-</div>
-
 <hr>
+
+<div style="
+    font-size:15px;
+    font-weight:bold;
+    color:#d6d6d6;
+    margin-bottom:10px;
+">
+Today's Production
+</div>
 
 <div>✔ Accept :
 <span id="wtAccept">0</span></div>
-
 <div>✏ Update :
 <span id="wtUpdate">0</span></div>
 
@@ -354,20 +358,6 @@ Version ${WT.Config.Version}
 
 <b>Total :
 <span id="wtTotal">0</span></b>
-
-</div>
-
-<hr>
-
-<div>
-
-⏱
-
-<span id="wtTimer">
-
-00:00:00
-
-</span>
 
 </div>
 
@@ -383,30 +373,35 @@ Version ${WT.Config.Version}
 
     },
 
-    refresh(){
+   refresh(){
 
-        if(!WT.Widget.box)
-            return;
+    if(!WT.Widget.box)
+        return;
 
-        document.getElementById("wtUser").textContent =
+    const accept = WT.DB.counters.accept;
+    const update = WT.DB.counters.update;
+    const reject = WT.DB.counters.reject;
+    const total  = WT.DB.counters.total;
+
+    const acceptPct = total > 0 ? ((accept / total) * 100).toFixed(1) : "0.0";
+    const updatePct = total > 0 ? ((update / total) * 100).toFixed(1) : "0.0";
+    const rejectPct = total > 0 ? ((reject / total) * 100).toFixed(1) : "0.0";
+
+    document.getElementById("wtUser").textContent =
         WT.DB.user.name;
 
-        document.getElementById("wtAccept").textContent =
-        WT.DB.counters.accept;
+  document.getElementById("wtAccept").textContent =
+    `${accept} (${acceptPct}%)`;
 
-        document.getElementById("wtUpdate").textContent =
-        WT.DB.counters.update;
+document.getElementById("wtUpdate").textContent =
+    `${update} (${updatePct}%)`;
 
-        document.getElementById("wtReject").textContent =
-        WT.DB.counters.reject;
+document.getElementById("wtReject").textContent =
+    `${reject} (${rejectPct}%)`;
+    document.getElementById("wtTotal").textContent =
+        total;
 
-        document.getElementById("wtTotal").textContent =
-WT.DB.counters.total;
-
-        document.getElementById("wtTimer").textContent =
-        WT.Session.getElapsed();
-
-    },
+},
 
     enableDrag(){
 
@@ -667,11 +662,7 @@ WT.Detector.init();
 
 WT.Widget.create();
 
-    setInterval(function(){
-
-        WT.Widget.refresh();
-
-    },1000);
+WT.Widget.refresh();
 
     console.log(
 
