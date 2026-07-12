@@ -112,7 +112,13 @@ WT.State = {
 
     clickDelay: 500,
 
-    ignoreMouseUntil: 0
+    ignoreMouseUntil: 0,
+
+    syncPending: false,
+
+    lastSync: "",
+
+    syncStatus: "Ready"
 
 };
 /* ===========================================================
@@ -376,6 +382,17 @@ Today's Production
 
 </div>
 
+<hr>
+
+<div>
+☁ Sync :
+<span id="wtSyncStatus">Ready</span>
+</div>
+
+<div style="font-size:11px;color:#bbb">
+<span id="wtLastSync">--</span>
+</div>
+
 `;
 
         document.body.appendChild(div);
@@ -416,6 +433,11 @@ document.getElementById("wtReject").textContent =
     document.getElementById("wtTotal").textContent =
         total;
 
+        document.getElementById("wtSyncStatus").textContent =
+    WT.State.syncStatus;
+
+document.getElementById("wtLastSync").textContent =
+    WT.State.lastSync || "--";
 },
 
     enableDrag(){
@@ -723,10 +745,9 @@ WT.DB.history[today].total  = WT.DB.counters.total;
 
     WT.Storage.save();
 
-    WT.Widget.refresh();
+WT.Widget.refresh();
 
-    WT.API.sync();
-
+WT.State.syncPending = true;
 },
 
     reset(){
@@ -766,6 +787,12 @@ WT.API = {
 
     sync() {
 
+        console.log("[SYNC] Uploading...");
+
+        WT.State.syncStatus = "Uploading...";
+
+WT.Widget.refresh();
+
     GM_xmlhttpRequest({
 
         method: "POST",
@@ -801,14 +828,26 @@ WT.API = {
 
         onload: function(response){
 
-            console.log("[API]", response.responseText);
+    WT.State.syncPending = false;
 
-        },
+WT.State.syncStatus = "Online";
+
+WT.State.lastSync =
+    new Date().toLocaleTimeString();
+
+WT.Widget.refresh();
+
+console.log("[SYNC COMPLETE]", response.responseText);
+
+},
 
        onerror: function(error){
 
     console.error("[API ERROR]", error.status);
     console.error(error);
+    WT.State.syncStatus = "Failed";
+
+WT.Widget.refresh();
 
 }
 
@@ -836,6 +875,30 @@ WT.Detector.init();
 WT.Widget.create();
 
 WT.Widget.refresh();
+
+setInterval(function(){
+
+    if(WT.State.syncPending){
+
+        WT.API.sync();
+
+        WT.State.syncPending = false;
+
+    }
+
+},30000);
+
+setInterval(function(){
+
+    if(WT.State.syncPending){
+
+        WT.API.sync();
+
+        WT.State.syncPending = false;
+
+    }
+
+},30000);
 
     console.log(
 
