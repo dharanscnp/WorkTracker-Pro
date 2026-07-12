@@ -104,8 +104,8 @@ WT.State = {
 
     lastClickTime: 0,
 
-    clickDelay: 500
-    
+    clickDelay: 500,
+
     ignoreMouseUntil: 0
 
 };
@@ -521,7 +521,29 @@ WT.DB.counters.total;
 =========================================================== */
 
 WT.Detector = {
+getActiveSubmitButton() {
 
+    const buttons = document.querySelectorAll("button");
+
+    for (const btn of buttons) {
+
+        const text = btn.textContent.trim().toLowerCase();
+
+        if (btn.offsetParent === null) continue; // Ignore hidden buttons
+
+        if (
+            text === "accept" ||
+            text === "complete" ||
+            text === "refresh" ||
+            text === "continue"
+        ) {
+            return text;
+        }
+    }
+
+    return "";
+
+},
     init() {
 
         // Detect field modifications
@@ -598,8 +620,25 @@ WT.Detector = {
 
             }
 
-            console.log("[Keyboard] Accept");
-            WT.Tracker.record("accept");
+            const action = WT.Detector.getActiveSubmitButton();
+
+console.log("[Keyboard] Active Button:", action);
+
+switch (action) {
+
+    case "accept":
+        WT.Tracker.record("accept");
+        break;
+
+    case "complete":
+    case "refresh":
+    case "continue":
+        console.log("[Keyboard] Ignored:", action);
+        break;
+
+    default:
+        console.log("[Keyboard] No active action");
+}
 
         }, true);
 
