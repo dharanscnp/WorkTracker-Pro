@@ -779,6 +779,7 @@ WT.API = {
         },
 
         data: JSON.stringify({
+            key: WT.History.today() + "_" + WT.DB.user.name.trim().toUpperCase(),
 
             date: WT.History.today(),
 
