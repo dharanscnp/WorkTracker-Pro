@@ -36,6 +36,8 @@ WT.Config = {
 
     RefreshRate: 1000
 
+    SyncInterval: 30000,
+
 };
 
 /* ===========================================================
@@ -82,11 +84,15 @@ widget:{
 
     debug:{
 
-        lastAction:"",
+    lastAction:"",
 
-        lastSaved:""
+    lastSaved:"",
 
-    }
+    lastSync:"",
+
+    syncStatus:"Ready"
+
+}
 
 };
 
@@ -119,6 +125,8 @@ WT.State = {
     lastSync: "",
 
     syncStatus: "Ready"
+
+    isSyncing: false,
 
 };
 /* ===========================================================
@@ -379,6 +387,19 @@ Today's Production
 
 <b>Total :
 <span id="wtTotal">0</span></b>
+<hr>
+
+<div>
+☁ Sync :
+<span id="wtSyncStatus">Ready</span>
+</div>
+
+<div style="font-size:11px;color:#bdbdbd">
+
+Last :
+<span id="wtLastSync">--</span>
+
+</div>
 
 </div>
 
@@ -432,6 +453,11 @@ document.getElementById("wtReject").textContent =
     `${reject} (${rejectPct}%)`;
     document.getElementById("wtTotal").textContent =
         total;
+        document.getElementById("wtSyncStatus").textContent =
+    WT.DB.debug.syncStatus;
+
+document.getElementById("wtLastSync").textContent =
+    WT.DB.debug.lastSync || "--";
 
         document.getElementById("wtSyncStatus").textContent =
     WT.State.syncStatus;
@@ -743,11 +769,14 @@ WT.DB.history[today].total  = WT.DB.counters.total;
     // Reset modification flag for next record
     WT.State.modified = false;
 
-    WT.Storage.save();
+ WT.State.syncPending = true;
+
+// Show that local changes are waiting to be uploaded
+WT.DB.debug.syncStatus = "Pending";
+
+WT.Storage.save();
 
 WT.Widget.refresh();
-
-WT.State.syncPending = true;
 },
 
     reset(){
@@ -786,12 +815,19 @@ WT.API = {
     url: "https://script.google.com/macros/s/AKfycby5ZDjB3g_zZy-rfFitlmYVriHHt6TbB1v0Pd8MayXRCKbZf3_A6wt1w7OOamTmzp-7oQ/exec",
 
     sync() {
+if(WT.State.isSyncing)
+    return;
 
-        console.log("[SYNC] Uploading...");
+WT.State.isSyncing = true;
+       sync() {
 
-        WT.State.syncStatus = "Uploading...";
+    console.log("[SYNC] Uploading...");
 
-WT.Widget.refresh();
+    WT.DB.debug.syncStatus = "Uploading...";
+
+    WT.Storage.save();
+
+    WT.Widget.refresh();
 
     GM_xmlhttpRequest({
 
@@ -830,24 +866,35 @@ WT.Widget.refresh();
 
     WT.State.syncPending = false;
 
-WT.State.syncStatus = "Online";
+    WT.State.isSyncing = false;
 
-WT.State.lastSync =
-    new Date().toLocaleTimeString();
+    WT.DB.debug.syncStatus = "Online";
 
-WT.Widget.refresh();
+    WT.DB.debug.lastSync = new Date().toLocaleTimeString();
 
-console.log("[SYNC COMPLETE]", response.responseText);
+    WT.Storage.save();
+
+    WT.Widget.refresh();
+
+    console.log("[SYNC COMPLETE]", response.responseText);
 
 },
 
-       onerror: function(error){
+      onerror: function(error){
+
+    WT.State.syncPending = true;
+
+    WT.State.isSyncing = false;
+
+    WT.DB.debug.syncStatus = "Failed";
+
+    WT.Storage.save();
+
+    WT.Widget.refresh();
 
     console.error("[API ERROR]", error.status);
-    console.error(error);
-    WT.State.syncStatus = "Failed";
 
-WT.Widget.refresh();
+    console.error(error);
 
 }
 
@@ -882,23 +929,9 @@ setInterval(function(){
 
         WT.API.sync();
 
-        WT.State.syncPending = false;
-
     }
 
-},30000);
-
-setInterval(function(){
-
-    if(WT.State.syncPending){
-
-        WT.API.sync();
-
-        WT.State.syncPending = false;
-
-    }
-
-},30000);
+}, WT.Config.SyncInterval);
 
     console.log(
 
