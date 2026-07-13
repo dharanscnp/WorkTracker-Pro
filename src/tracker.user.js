@@ -34,7 +34,7 @@ WT.Config = {
 
     StorageKey: "WTPRO_DATABASE",
 
-    RefreshRate: 1000
+    RefreshRate: 1000,
 
     SyncInterval: 30000,
 
@@ -124,7 +124,7 @@ WT.State = {
 
     lastSync: "",
 
-    syncStatus: "Ready"
+    syncStatus: "Ready",
 
     isSyncing: false,
 
@@ -397,21 +397,9 @@ Today's Production
 <div style="font-size:11px;color:#bdbdbd">
 
 Last :
-<span id="wtLastSync">--</span>
-
-</div>
-
-</div>
-
-<hr>
-
-<div>
-☁ Sync :
-<span id="wtSyncStatus">Ready</span>
-</div>
 
 <div style="font-size:11px;color:#bbb">
-<span id="wtLastSync">--</span>
+<span id="wtLastSync"></span>
 </div>
 
 `;
@@ -819,8 +807,7 @@ if(WT.State.isSyncing)
     return;
 
 WT.State.isSyncing = true;
-       sync() {
-
+    
     console.log("[SYNC] Uploading...");
 
     WT.DB.debug.syncStatus = "Uploading...";
