@@ -122,10 +122,6 @@ WT.State = {
 
     syncPending: false,
 
-    lastSync: "",
-
-    syncStatus: "Ready",
-
     isSyncing: false,
 
 };
@@ -395,13 +391,9 @@ Today's Production
 </div>
 
 <div style="font-size:11px;color:#bdbdbd">
-
 Last :
-
-<div style="font-size:11px;color:#bbb">
-<span id="wtLastSync"></span>
+<span id="wtLastSync">--</span>
 </div>
-
 `;
 
         document.body.appendChild(div);
@@ -447,11 +439,7 @@ document.getElementById("wtReject").textContent =
 document.getElementById("wtLastSync").textContent =
     WT.DB.debug.lastSync || "--";
 
-        document.getElementById("wtSyncStatus").textContent =
-    WT.State.syncStatus;
-
-document.getElementById("wtLastSync").textContent =
-    WT.State.lastSync || "--";
+       
 },
 
     enableDrag(){
@@ -912,11 +900,13 @@ WT.Widget.refresh();
 
 setInterval(function(){
 
-    if(WT.State.syncPending){
+    if(!WT.State.syncPending)
+        return;
 
-        WT.API.sync();
+    if(WT.State.isSyncing)
+        return;
 
-    }
+    WT.API.sync();
 
 }, WT.Config.SyncInterval);
 
