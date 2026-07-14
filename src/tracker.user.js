@@ -1,10 +1,12 @@
 // ==UserScript==
 // @name         WorkTracker Pro
 // @namespace    https://github.com/dharanscnp/WorkTracker-Pro
-// @version      3.2.100
+// @version      6.1.100
 // @description  Professional Productivity Tracker
 // @match        *://*.teletype.team/*
 // @grant        GM_xmlhttpRequest
+// @grant GM_getValue
+// @grant GM_setValue
 // @connect      script.google.com
 // @connect      script.googleusercontent.com
 // ==/UserScript==
@@ -15,7 +17,7 @@
 
 /* ===========================================================
    WorkTracker Pro
-   Version : 3.2.100
+   Version : 6.1.100
 =========================================================== */
 
 const WT = {};
@@ -28,7 +30,7 @@ WT.Config = {
 
     AppName: "WorkTracker Pro",
 
-    Version: "3.2.100",
+    Version: "6.1.100",
 
     Debug: true,
 
@@ -135,10 +137,7 @@ WT.Storage = {
 
         try{
 
-            const data =
-            localStorage.getItem(
-                WT.Config.StorageKey
-            );
+            const data = GM_getValue(WT.Config.StorageKey, "");
 
             if(data){
 
@@ -179,13 +178,10 @@ WT.Storage = {
         WT.DB.debug.lastSaved=
         new Date().toLocaleTimeString();
 
-        localStorage.setItem(
-
-            WT.Config.StorageKey,
-
-            JSON.stringify(WT.DB)
-
-        );
+        GM_setValue(
+    WT.Config.StorageKey,
+    JSON.stringify(WT.DB)
+);
 
     },
 
@@ -639,6 +635,7 @@ WT.History = {
 
         const today = WT.History.today();
 
+        // Create today's history if not present
         if (!WT.DB.history[today]) {
 
             WT.DB.history[today] = {
@@ -657,11 +654,23 @@ WT.History = {
 
             WT.DB.lastDate = today;
 
-            WT.Storage.save();
-
-            console.log("[History] Created:", today);
-
         }
+
+        // ******** NEW ********
+        // Restore today's counters
+        WT.DB.counters.accept =
+            WT.DB.history[today].accept || 0;
+
+        WT.DB.counters.update =
+            WT.DB.history[today].update || 0;
+
+        WT.DB.counters.reject =
+            WT.DB.history[today].reject || 0;
+
+        WT.DB.counters.total =
+            WT.DB.history[today].total || 0;
+
+        WT.Storage.save();
 
     },
 
@@ -669,19 +678,16 @@ WT.History = {
 
         const today = WT.History.today();
 
-        // If it's still the same day, do nothing.
         if (WT.DB.lastDate === today)
             return;
 
         console.log("[History] New Day:", today);
 
-        // Reset today's counters
         WT.DB.counters.accept = 0;
         WT.DB.counters.update = 0;
         WT.DB.counters.reject = 0;
         WT.DB.counters.total = 0;
 
-        // Create today's history record
         WT.DB.history[today] = {
 
             user: WT.DB.user.name,
@@ -739,6 +745,8 @@ WT.DB.history[today].accept = WT.DB.counters.accept;
 WT.DB.history[today].update = WT.DB.counters.update;
 WT.DB.history[today].reject = WT.DB.counters.reject;
 WT.DB.history[today].total  = WT.DB.counters.total;
+console.log("===== HISTORY AFTER RECORD =====");
+console.log(JSON.stringify(WT.DB.history[today], null, 2));
 
     WT.DB.debug.lastAction = type;
 
@@ -751,6 +759,11 @@ WT.DB.history[today].total  = WT.DB.counters.total;
 WT.DB.debug.syncStatus = "Pending";
 
 WT.Storage.save();
+console.log("===== DATABASE AFTER SAVE =====");
+console.log(JSON.stringify(WT.DB, null, 2));
+
+console.log("===== LOCAL STORAGE =====");
+console.log(localStorage.getItem(WT.Config.StorageKey));
 
 WT.Widget.refresh();
 },
@@ -884,7 +897,11 @@ WT.State.isSyncing = true;
 
 WT.start=function(){
 
-    WT.Storage.load();
+WT.Storage.load();
+console.log("===== DATABASE AFTER LOAD =====");
+console.log(JSON.stringify(WT.DB, null, 2));
+
+WT.History.checkDate();
 
 WT.User.init();
 
