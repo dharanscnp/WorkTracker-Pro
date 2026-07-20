@@ -118,13 +118,15 @@ WT.State = {
 
     lastClickTime: 0,
 
-    clickDelay: 500,
+    clickDelay: 600,
 
     ignoreMouseUntil: 0,
 
     syncPending: false,
 
     isSyncing: false,
+
+    ignoreNextAccept: false
 
 };
 /* ===========================================================
@@ -718,8 +720,28 @@ WT.Tracker = {
 
    record(type){
 
+    // Prevent accidental rapid key presses
+    const now = Date.now();
+
+    if (now - WT.State.lastClickTime < WT.State.clickDelay)
+        return;
+
+    WT.State.lastClickTime = now;
+
     WT.History.checkDate();
 
+    // Ignore the login "Start New Session" Accept
+if (
+    type === "accept" &&
+    document.body.innerText.includes("Start New Session") &&
+    document.body.innerText.includes("You are starting a new session")
+) {
+
+    console.log("[Tracker] Login Accept ignored");
+
+    return;
+
+}
     // If user modified any field before clicking Accept,
     // count it as Update instead of Accept
 
@@ -745,8 +767,6 @@ WT.DB.history[today].accept = WT.DB.counters.accept;
 WT.DB.history[today].update = WT.DB.counters.update;
 WT.DB.history[today].reject = WT.DB.counters.reject;
 WT.DB.history[today].total  = WT.DB.counters.total;
-console.log("===== HISTORY AFTER RECORD =====");
-console.log(JSON.stringify(WT.DB.history[today], null, 2));
 
     WT.DB.debug.lastAction = type;
 
@@ -759,11 +779,7 @@ console.log(JSON.stringify(WT.DB.history[today], null, 2));
 WT.DB.debug.syncStatus = "Pending";
 
 WT.Storage.save();
-console.log("===== DATABASE AFTER SAVE =====");
-console.log(JSON.stringify(WT.DB, null, 2));
 
-console.log("===== LOCAL STORAGE =====");
-console.log(localStorage.getItem(WT.Config.StorageKey));
 
 WT.Widget.refresh();
 },
